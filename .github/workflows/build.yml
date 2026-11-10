@@ -1,0 +1,77 @@
+name: Build Desktop Installers
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+          - os: ubuntu-latest
+            name: linux
+          - os: macos-latest
+            name: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Test before packaging
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q
+      - name: Build standalone application
+        run: pyinstaller --noconfirm --clean --windowed --name CipherScope --paths src src/cipherscope/__main__.py
+      - name: Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\windows.iss
+      - name: Linux DEB installer
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir -p package/DEBIAN package/opt/cipherscope package/usr/bin package/usr/share/applications
+          cp -a dist/CipherScope/. package/opt/cipherscope/
+          cat > package/DEBIAN/control <<'CONTROL'
+          Package: cipherscope
+          Version: 1.0.0
+          Section: science
+          Priority: optional
+          Architecture: amd64
+          Maintainer: CipherScope contributors <noreply@github.com>
+          Description: Offline cryptography and cryptanalysis workstation
+          CONTROL
+          ln -s /opt/cipherscope/CipherScope package/usr/bin/cipherscope
+          printf '[Desktop Entry]\nName=CipherScope\nExec=/opt/cipherscope/CipherScope\nType=Application\nCategories=Science;Education;\nTerminal=false\n' > package/usr/share/applications/cipherscope.desktop
+          dpkg-deb --build package CipherScope-1.0.0-Linux-amd64.deb
+      - name: macOS DMG image
+        if: runner.os == 'macOS'
+        shell: bash
+        run: hdiutil create -volname CipherScope -srcfolder dist/CipherScope.app -ov -format UDZO CipherScope-1.0.0-macOS.dmg
+      - name: Upload Windows
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CipherScope-Windows-Setup
+          path: packaging/output/*.exe
+      - name: Upload Linux
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CipherScope-Linux-DEB
+          path: '*.deb'
+      - name: Upload macOS
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CipherScope-macOS-DMG
+          path: '*.dmg'
