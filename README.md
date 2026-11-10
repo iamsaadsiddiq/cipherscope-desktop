@@ -1,6 +1,4 @@
-# ◈ CipherScope Desktop
-
-**A cryptographic research workstation that looks like a lost piece of late-1990s laboratory software.**
+CipherScope Desktop
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-1b302e?logo=python) ![Qt](https://img.shields.io/badge/UI-PySide6-1b302e) ![AES](https://img.shields.io/badge/Vault-AES--256--GCM-315543) ![License](https://img.shields.io/badge/License-MIT-493a2e)
 
