@@ -21,6 +21,16 @@ CipherScope is an **offline, cross-platform desktop app** for authenticated file
 | **07 Hash Console** | SHA-256, SHA3-256 and BLAKE2b-256, text/file inputs and 1-bit avalanche comparisons |
 | **08 About** | Architecture, limitations, ethics, and security considerations |
 
+### Capture the live workstation UI
+
+For an authentic screenshot from the running Qt application:
+
+```bash
+python scripts/capture_screenshot.py
+```
+
+The capture script uses the Qt offscreen platform by default.
+
 ### Installation for developers
 
 Requires **Python 3.10+** and Windows, Linux or macOS.
